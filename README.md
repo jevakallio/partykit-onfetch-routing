@@ -1,11 +1,64 @@
-## 🎈 onfetch
+## 🎈 party-onfetch-example
 
 Welcome to the party, pal!
 
-This is a [Partykit](https://partykit.io) project, which lets you create real-time collaborative applications with minimal coding effort.
+This is a [Partykit](https://partykit.io) demo, showing how you can reroute requests/connections to a different party by using an `onFetch` handler.
 
-[`server.ts`](./src/server.ts) is the server-side code, which is responsible for handling WebSocket events and HTTP requests. [`client.ts`](./src/client.ts) is the client-side code, which connects to the server and listens for events.
 
-You can start developing by running `npm run dev` and opening [http://localhost:1999](http://localhost:1999) in your browser. When you're ready, you can deploy your application on to the PartyKit cloud with `npm run deploy`.
+## Server implementation
 
-Refer to our docs for more information: https://github.com/partykit/partykit/blob/main/README.md. For more help, reach out to us on [Discord](https://discord.gg/g5uqHQJc3z), [GitHub](https://github.com/partykit/partykit), or [Twitter](https://twitter.com/partykit_io).
+This project contains two parties:
+
+### `main.ts`
+
+Exposes two API endpoints:
+- `/login/:userId` — a fake login endpoint to set a cookie for given userId
+- `/user/*` — a router that forwards all requests to the `user.ts` party, using the `user` cookie value as the room id, i.e. every user will be routed to their separate room.
+
+### `user.ts`
+
+Simple PartyKit room that responds to HTTP request and WebSocket ping messages to demonstrate routing.
+
+### How it works
+
+The simplified version of the implementation is:
+```ts
+const userId = getCookie(req.headers.get("Cookie"), "user");
+if (userId) {
+  return lobby.parties.user
+    .get(userId)
+    .fetch(req as unknown as RequestInit);
+}
+```
+
+This gets the user cookie value, and then makes a fetch request to the user party with that akey as the id.
+
+## Client implementation
+
+The client in `client.ts` does the following:
+1. Calls the `/login/userId` endpoint to set the "user" cookie
+2. Makes a HTTP POST request to `/user` with the cookie to demonstrate that request is routed to the user room (equivalent to `/parties/user/:userId`).
+3. Opens a WebSocket connection to `/user` with cookie to demonstrate that the websocket is routed to the user room (equivalent to `/parties/user/:userId`).
+
+### How it works
+
+Instead of the usual `import PartySocket from "partysocket"` constructor, we use the raw reconnecting `WebSocket` constructor, which takes a URL string as a parameter.
+
+Note that for the cookie to be passed to the WebSocket, the WebSocket origin needs to be the same as the website host. At the moment, until PartyKit gets custom domain support, this approach won't work for cross-origin requests unless you proxy the request via your own domain.
+
+```ts
+import { WebSocket } from "partysocket";
+const host = document.location.host;
+const protocol =
+  host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "ws" : "wss";
+const conn = new WebSocket(`${protocol}://${host}/user`, undefined, {
+  startClosed: true,
+});
+```
+
+
+
+
+
+
+
