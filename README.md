@@ -2,8 +2,13 @@
 
 Welcome to the party, pal!
 
-This is a [Partykit](https://partykit.io) demo, showing how you can reroute requests/connections to a different party by using an `onFetch` handler.
+This is a [Partykit](https://partykit.io) demo, showing how to:
+- Reroute requests/connections to a different party by using an `onFetch` handler
+- Create secure per-user stores by implementing cookie/session authentication
 
+## Live site
+
+https://onfetch.jevakallio.partykit.dev
 
 ## Server implementation
 
@@ -18,6 +23,8 @@ Exposes two API endpoints:
 ### `user.ts`
 
 Simple PartyKit room that responds to HTTP request and WebSocket ping messages to demonstrate routing.
+
+This room prevents direct access to the party's public URL, so the only access is via the `onFetch` router via the main party.
 
 ### How it works
 
@@ -44,7 +51,9 @@ The client in `client.ts` does the following:
 
 Instead of the usual `import PartySocket from "partysocket"` constructor, we use the raw reconnecting `WebSocket` constructor, which takes a URL string as a parameter.
 
-Note that for the cookie to be passed to the WebSocket, the WebSocket origin needs to be the same as the website host. At the moment, until PartyKit gets custom domain support, this approach won't work for cross-origin requests unless you proxy the request via your own domain.
+Note that for the cookie to be passed to the WebSocket, the WebSocket origin needs to be the same as the website host.  
+
+At the moment, until PartyKit gets custom domain support, this approach won't work for cross-origin requests unless you proxy the request via your own domain.
 
 ```ts
 import { WebSocket } from "partysocket";
