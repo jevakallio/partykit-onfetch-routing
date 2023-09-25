@@ -1,6 +1,6 @@
 import "./styles.css";
 
-import PartySocket from "partysocket";
+import { WebSocket } from "partysocket";
 
 declare const PARTYKIT_HOST: string;
 
@@ -15,16 +15,44 @@ function add(text: string) {
   output.appendChild(document.createElement("br"));
 }
 
-// A PartySocket is like a WebSocket, except it's a bit more magical.
-// It handles reconnection logic, buffering messages while it's offline, and more.
-const conn = new PartySocket({
-  host: PARTYKIT_HOST,
-  room: "my-new-room",
+const host = document.location.host;
+const protocol =
+  host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "ws" : "wss";
+
+// Use the raw websocket connectior
+const conn = new WebSocket(`${protocol}://${host}/user`, undefined, {
+  startClosed: true,
+});
+
+document.getElementById("login")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  const userId = (document.getElementById("username") as HTMLInputElement)
+    ?.value;
+  if (!userId) {
+    return add("Please set a username first");
+  }
+
+  add(`Setting a cookie by calling /login/${userId}`);
+  fetch(`/login/${userId}`, { credentials: "include" })
+    .then((res) => res.text())
+    .then((text) => {
+      add(`Cookie should now be set, server responded with ${text}}`);
+
+      add("Opening a WebSocket connection to /user");
+      conn.reconnect();
+
+      add("Making a HTTP request to /user");
+      fetch("/user", { method: "POST", credentials: "include" })
+        .then((res) => res.text())
+        .then((text) => {
+          add("Received HTTP response: " + text);
+        });
+    });
 });
 
 // You can even start sending messages before the connection is open!
 conn.addEventListener("message", (event) => {
-  add(`Received -> ${event.data}`);
+  add(`Received WebSocket Message: ${event.data}`);
 });
 
 // Let's listen for when the connection opens

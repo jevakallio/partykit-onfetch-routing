@@ -1,6 +1,9 @@
 {
   "name": "onfetch",
-  "main": "src/server.ts",
+  "main": "src/main.ts",
+  "parties": {
+    "user": "src/user.ts"
+  },
   "serve": {
     "path": "public",
     "build": "src/client.ts"
